@@ -1,0 +1,5 @@
+El uso de la data para la creación de mapa de calor del Perú ubicada en la carpeta "DEPARTAMENTOS" no es propio, y los derechos para su uso pertenecen a su respectivo dueño.
+Las bases de datos de RENIEC deben ser descargadas personalmente y renombradas de la misma forma que se presenta en el código para evitar complicaciones. Pueden encontrarlas en el siguiente link:
+https://datosabiertos.gob.pe/dataset/reniec-poblaci%C3%B3n-identificada-con-dni-de-mayor-de-edad-por-condici%C3%B3n-de-donante-de-%C3%B3rganos
+La data sobre el IDH por departamento en el Perú datan del 2019 publicado por el programa PNUD de las ONU. Pueden encontrarla en la página 21 del siguiente link:
+https://www.undp.org/sites/g/files/zskgke326/files/migration/pe/896b1c8abc283aa2909892ebcc0201997a3bcf200795a9baa7e50855128b271a.pdf
