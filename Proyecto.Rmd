@@ -1,0 +1,724 @@
+---
+title: "Proyecto de Bioestadística - Avance 1"
+subtitle: "Disposición a la Donación de Órganos de mayores de edad y su Asociación con el Índice Desarrollo Humano en el Perú"
+author: "Rubens Castro"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+## Librerías 
+
+Nota: CORRER DOS VECES
+
+```{r}
+#install.packages("readxl")
+#install.packages("tidyr")
+#install.packages("dplyr")
+#install.packages("stringr")
+#install.packages("purrr")
+#install.packages("ggplot2")
+#install.packages("sf")
+#install.packages("tidyverse")
+#install.packages("ggrepel")
+#install.packages("shadowtext")
+#install.packages("dendextend")
+#install.packages("ggdendro")
+#install.packages("ggforce")
+library(readxl)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(purrr)
+library(ggplot2)
+library(sf)
+library(tidyverse)
+library(ggrepel)
+library(shadowtext)
+library(dendextend)
+library(ggdendro)
+library(ggforce)
+```
+
+## Bases de datos
+
+```{r}
+D2022_1 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2022_1.csv", sep = "\t", header = TRUE)
+D2022_2 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2022_2.csv", sep = "\t", header = TRUE)
+D2022_3 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2022_3.csv", sep = "\t", header = TRUE)
+D2022_4 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2022_4.csv", sep = ",", header = TRUE)
+D2023_1 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2023_1.csv", sep = ",", header = TRUE)
+D2023_2 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2023_2.csv", sep = ",", header = TRUE)
+D2023_3 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2023_3.csv", sep = ",", header = TRUE)
+D2023_4 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2023_4.csv", sep = ",", header = TRUE)
+D2024_1 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2024_1.csv", sep = ",", header = TRUE)
+D2024_2 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2024_2.csv", sep = ",", header = TRUE)
+D2024_3 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2024_3.csv", sep = ",", header = TRUE)
+D2024_4 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2024_4.csv", sep = ",", header = TRUE)
+D2025_1 <- read.table("C:/Users/ruben/OneDrive/Escritorio/Data/2025_1.csv", sep = ",", header = TRUE)
+```
+
+## Limpieza de datos
+
+### Columna Departamento
+
+```{r}
+limpieza_dept <- c("Hu�nuco" = "HUANUCO", "San Mart�n" = "SAN MARTIN", "�ncash" = "ANCASH", "Jun�n" = "JUNIN",
+                "Apur�mac" = "APURIMAC","Amazonas"="AMAZONAS","Arequipa"="AREQUIPA","Ayacucho"="AYACUCHO",
+                "Cajamarca"="CAJAMARCA","Callao"="CALLAO","Cusco"="CUSCO","Huancavelica"="HUANCAVELICA","Ica"="ICA",
+                "La Libertad"="LA LIBERTAD","Lambayeque"="LAMBAYEQUE","Lima"="LIMA","Loreto"="LORETO",
+                "Madre de Dios"="MADRE DE DIOS","Moquegua"="MOQUEGUA","Pasco"="PASCO","Piura"="PIURA",
+                "Puno"="PUNO","Tacna"="TACNA","Tumbes"="TUMBES","Ucayali"="UCAYALI")
+limpieza_dept1 <- c("Huánuco" = "HUANUCO", "San Martín" = "SAN MARTIN", "Áncash" = "ANCASH", "Junín" = "JUNIN",
+                "Apurímac" = "APURIMAC","Amazonas"="AMAZONAS","Arequipa"="AREQUIPA","Ayacucho"="AYACUCHO",
+                "Cajamarca"="CAJAMARCA","Callao"="CALLAO","Cusco"="CUSCO","Huancavelica"="HUANCAVELICA",
+                "Ica"="ICA","La Libertad"="LA LIBERTAD","Lambayeque"="LAMBAYEQUE","Lima"="LIMA","Loreto"="LORETO",
+                "Madre de Dios"="MADRE DE DIOS","Moquegua"="MOQUEGUA","Pasco"="PASCO","Piura"="PIURA",
+                "Puno"="PUNO","Tacna"="TACNA","Tumbes"="TUMBES","Ucayali"="UCAYALI")
+
+D2022_1$Departamento <- reduce(names(limpieza_dept), function(x, y) {
+  str_replace(x, y, limpieza_dept[[y]])
+}, .init = D2022_1$Departamento)
+D2022_2$Departamento <- reduce(names(limpieza_dept), function(x, y) {
+  str_replace(x, y, limpieza_dept[[y]])
+}, .init = D2022_2$Departamento)
+D2022_3$Departamento <- reduce(names(limpieza_dept), function(x, y) {
+  str_replace(x, y, limpieza_dept[[y]])
+}, .init = D2022_3$Departamento)
+D2022_4$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2022_4$Departamento)
+
+D2023_1$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2023_1$Departamento)
+D2023_2$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2023_2$Departamento)
+D2023_3$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2023_3$Departamento)
+D2023_4$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2023_4$Departamento)
+
+D2024_1$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2024_1$Departamento)
+D2024_2$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2024_2$Departamento)
+D2024_3$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2024_3$Departamento)
+D2024_4$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2024_4$Departamento)
+
+D2025_1$Departamento <- reduce(names(limpieza_dept1), function(x, y) {
+  str_replace(x, y, limpieza_dept1[[y]])
+}, .init = D2025_1$Departamento)
+
+D2022_1 <- D2022_1[!(D2022_1$Departamento == ' '),]
+D2022_2 <- D2022_2[!(D2022_2$Departamento == ' '),]
+D2022_3 <- D2022_3[!(D2022_3$Departamento == ' '),]
+D2022_4 <- D2022_4[!(D2022_4$Departamento == ' '),]
+D2023_1 <- D2023_1[!(D2023_1$Departamento == ' '),]
+D2023_2 <- D2023_2[!(D2023_2$Departamento == ' '),]
+D2023_3 <- D2023_3[!(D2023_3$Departamento == ' '),]
+D2023_4 <- D2023_4[!(D2023_4$Departamento == ' '),]
+D2024_1 <- D2024_1[!(D2024_1$Departamento == ' '),]
+D2024_2 <- D2024_2[!(D2024_2$Departamento == ' '),]
+D2024_3 <- D2024_3[!(D2024_3$Departamento == ' '),]
+D2024_4 <- D2024_4[!(D2024_4$Departamento == ' '),]
+D2025_1 <- D2025_1[!(D2025_1$Departamento == ' '),]
+```
+
+### Columna Edad
+
+```{r}
+D2022_1 <- D2022_1[!(D2022_1$Edad < 18),]
+D2022_2 <- D2022_2[!(D2022_2$Edad < 18),]
+D2022_3 <- D2022_3[!(D2022_3$Edad < 18),]
+D2022_4 <- D2022_4[!(D2022_4$Edad < 18),]
+D2023_1 <- D2023_1[!(D2023_1$Edad < 18),]
+D2023_2 <- D2023_2[!(D2023_2$Edad < 18),]
+D2023_3 <- D2023_3[!(D2023_3$Edad < 18),]
+D2023_4 <- D2023_4[!(D2023_4$Edad < 18),]
+D2024_1 <- D2024_1[!(D2024_1$Edad < 18),]
+D2024_2 <- D2024_2[!(D2024_2$Edad < 18),]
+D2024_3 <- D2024_3[!(D2024_3$Edad < 18),]
+D2024_4 <- D2024_4[!(D2024_4$Edad < 18),]
+D2025_1 <- D2025_1[!(D2025_1$Edad < 18),]
+```
+
+AQUÍ NO SÉ SI ELIMINAR DENTRO DE LA CONSIDERACIÓN A LAS PERSONAS MENORES DE 18 AÑOS
+
+### Columna Donación
+
+```{r}
+colnames(D2022_1)[13] <- "Donacion"
+colnames(D2022_2)[13] <- "Donacion"
+colnames(D2022_3)[13] <- "Donacion"
+
+D2022_1$Donante <- ifelse(D2022_1$Donacion == "Si acepta donar", 1, 0)
+D2022_2$Donante <- ifelse(D2022_2$Donacion == "Si acepta donar", 1, 0)
+D2022_3$Donante <- ifelse(D2022_3$Donacion == "Si acepta donar", 1, 0)
+D2022_4$Donante <- ifelse(D2022_4$Donacion == "Si acepta donar", 1, 0)
+D2023_1$Donante <- ifelse(D2023_1$Donacion == "Si acepta donar", 1, 0)
+D2023_2$Donante <- ifelse(D2023_2$Donacion == "Si acepta donar", 1, 0)
+D2023_3$Donante <- ifelse(D2023_3$Donacion == "Si acepta donar", 1, 0)
+D2023_4$Donante <- ifelse(D2023_4$Donacion == "Si acepta donar", 1, 0)
+D2024_1$Donante <- ifelse(D2024_1$Donacion == "Si acepta donar", 1, 0)
+D2024_2$Donante <- ifelse(D2024_2$Donacion == "Si acepta donar", 1, 0)
+D2024_3$Donante <- ifelse(D2024_3$Donacion == "Si acepta donar", 1, 0)
+D2024_4$Donante <- ifelse(D2024_4$Donacion == "Si acepta donar", 1, 0)
+D2025_1$Donante <- ifelse(D2025_1$Donacion == "Si acepta donar", 1, 0)
+```
+
+
+## Clustering (k-means)
+
+### Estructuración de datos
+
+Primero debemos crear las tablas de proporciones por cada trimestre evaluado, en nuestro caso sería desde el primer trimestre del 2022 hasta el prmer trimestre del 2025.
+
+```{r}
+# Año 2022
+
+T2022_1 <- D2022_1 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2022_1 <- T2022_1[ , !(names(T2022_1) %in% c("0","1","total"))]
+colnames(T2022_1)[1]<-"NOMBDEP"
+
+
+T2022_2 <- D2022_2 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2022_2 <- T2022_2[ , !(names(T2022_2) %in% c("0","1","total"))]
+colnames(T2022_2)[1]<-"NOMBDEP"
+
+
+T2022_3 <- D2022_3 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2022_3 <- T2022_3[ , !(names(T2022_3) %in% c("0","1","total"))]
+colnames(T2022_3)[1]<-"NOMBDEP"
+
+
+T2022_4 <- D2022_4 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2022_4 <- T2022_4[ , !(names(T2022_4) %in% c("0","1","total"))]
+colnames(T2022_4)[1]<-"NOMBDEP"
+
+
+# Año 2023
+
+T2023_1 <- D2023_1 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2023_1 <- T2023_1[ , !(names(T2023_1) %in% c("0","1","total"))]
+colnames(T2023_1)[1]<-"NOMBDEP"
+
+
+T2023_2 <- D2023_2 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2023_2 <- T2023_2[ , !(names(T2023_2) %in% c("0","1","total"))]
+colnames(T2023_2)[1]<-"NOMBDEP"
+
+
+T2023_3 <- D2023_3 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2023_3 <- T2023_3[ , !(names(T2023_3) %in% c("0","1","total"))]
+colnames(T2023_3)[1]<-"NOMBDEP"
+
+
+T2023_4 <- D2023_4 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2023_4 <- T2023_4[ , !(names(T2023_4) %in% c("0","1","total"))]
+colnames(T2023_4)[1]<-"NOMBDEP"
+
+
+# Año 2024
+
+T2024_1 <- D2024_1 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2024_1 <- T2024_1[ , !(names(T2024_1) %in% c("0","1","total"))]
+colnames(T2024_1)[1]<-"NOMBDEP"
+
+
+T2024_2 <- D2024_2 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2024_2 <- T2024_2[ , !(names(T2024_2) %in% c("0","1","total"))]
+colnames(T2024_2)[1]<-"NOMBDEP"
+
+
+T2024_3 <- D2024_3 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2024_3 <- T2024_3[ , !(names(T2024_3) %in% c("0","1","total"))]
+colnames(T2024_3)[1]<-"NOMBDEP"
+
+
+T2024_4 <- D2024_4 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2024_4 <- T2024_4[ , !(names(T2024_4) %in% c("0","1","total"))]
+colnames(T2024_4)[1]<-"NOMBDEP"
+
+
+# Año 2025
+
+T2025_1 <- D2025_1 %>%
+  group_by(Departamento, Donante) %>%
+  summarise(personas = sum(Cantidad), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Donante, values_from = personas, values_fill = 0) %>%
+  mutate(total = `0` + `1`,
+         prop_donante = (`1` / total))
+T2025_1 <- T2025_1[ , !(names(T2025_1) %in% c("0","1","total"))]
+colnames(T2025_1)[1]<-"NOMBDEP"
+```
+
+Ahora debemos juntar las tablas para estructurar los datos en la forma final deseada.
+
+```{r}
+nombres_tablas <- c("T2022_1", "T2022_2", "T2022_3", "T2022_4",
+                    "T2023_1", "T2023_2", "T2023_3", "T2023_4",
+                    "T2024_1", "T2024_2", "T2024_3", "T2024_4",
+                    "T2025_1")
+
+lista_tablas <- lapply(nombres_tablas, function(nombre) {
+  tabla <- get(nombre)
+  colnames(tabla) <- c("Departamento", "prop_donante")
+  tabla$Trimestre <- nombre
+  return(tabla)})
+
+datos_largos <- bind_rows(lista_tablas)
+
+datos_ancho <- datos_largos %>%
+  pivot_wider(names_from = Trimestre, values_from = prop_donante)
+
+datos_ancho
+```
+
+```{r}
+ggplot(datos_largos, aes(x = Trimestre, y = prop_donante, group = Departamento, color = Departamento)) +
+  geom_line(size = 0.5) +
+  geom_point(size = 1) +
+  labs(title = "Evolución Trimestral de la Proporción de Donantes por Departamento",
+       x = "Trimestre",
+       y = "Proporción de Donantes",
+       color = "Departamento") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+```
+
+
+#### Estandarización de datos
+
+Primero debemos evaluar si realizar la estandarización de los datos. Para eso buscamos evaluar los rangos mínimos y máximos, así como la desviación estándar entre trimestras.
+
+```{r}
+summary(datos_ancho %>% select(-Departamento))
+```
+
+Podemos observar y concluir lo siguiente:
+  Los valores mínimos oscilan entre 0.0398 y 0.0437
+  Los máximos entre 0.1935 y 0.1957
+  Las medias están todas entre 0.1004 y 0.1013
+  Las medianas son virtualmente iguales (~0.098–0.100)
+  El rango intercuartílico (IQR) también es muy parecido entre trimestres
+
+Esto indica que la distribución de proporciones es muy homogénea entre trimestres, por lo que no es necesario estandarizar los datos. En caso de hacerlo podría incluso introducir ruido innecesario al análisis.
+
+
+#### Elbow Method o Método del codo
+
+El método del codo es una técnica ampliamente utilizada para determinar el número óptimo de clusters (k) en un análisis de agrupamiento, particularmente cuando se aplica el algoritmo K-means. Este método se basa en observar cómo varía la suma de cuadrados intra-cluster (WSS) a medida que se incrementa el número de clusters.
+
+```{r}
+datos_cluster <- datos_ancho %>% select(-Departamento)
+
+# Calcular el WSS (Within-Cluster Sum of Squares) para k de 1 a 10
+set.seed(123)  # Para reproducibilidad
+wss <- sapply(1:10, function(k){
+  kmeans(datos_cluster, centers = k, nstart = 25)$tot.withinss
+})
+
+# Crear dataframe para graficar
+wss_df <- data.frame(
+  k = 1:10,
+  wss = wss
+)
+
+# Graficar el método del codo
+ggplot(wss_df, aes(x = k, y = wss)) +
+  geom_line(color = "#e9ddc1", size = 2.5) +
+  geom_point(color = "#807668", size = 3) +
+  labs(title = "Método del Codo para Determinar el Número Óptimo de Clusters",
+       caption = "Fuente: Elaboración propia",
+       x = "Número de Clusters (k)",
+       y = "Suma de cuadrados intra-cluster (WSS)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+En el gráfico obtenido, se puede apreciar que al aumentar k desde 1 hasta 10, la WSS disminuye progresivamente; sin embargo, esta reducción no es constante. Existe un punto claro en el que la disminución de la WSS se vuelve menos pronunciada: este punto de inflexión o "codo" ocurre cuando k = 3. A partir de este valor, añadir más clusters no reduce significativamente la variabilidad interna, lo que sugiere que los datos ya están adecuadamente representados con tres grupos.
+
+Por lo tanto, se seleccionó k = 3 como el número óptimo de clusters, ya que representa el mejor equilibrio entre simplicidad del modelo y capacidad de explicación de la estructura subyacente en los datos. Esta elección permite identificar tres patrones regionales distintos en cuanto a la proporción promedio de donantes de órganos por departamento, lo cual resulta adecuado para los fines exploratorios y comparativos de este estudio.
+
+```{r}
+# 1. Preparar los datos (sin la columna Departamento)
+datos_cluster <- datos_ancho %>% select(-Departamento)
+
+# 2. Calcular la matriz de distancias
+dist_matrix <- dist(datos_cluster, method = "euclidean")
+
+# 3. Aplicar clustering jerárquico
+hc <- hclust(dist_matrix, method = "complete")
+
+# 4. Convertir a objeto dendrograma y asignar colores
+dend <- as.dendrogram(hc)
+dend_colored <- color_branches(dend, k = 3)  # colorea con k = 3
+
+# 5. Personalizar etiquetas y grosor de líneas
+labels_colors(dend_colored) <- "black"     # Color de etiquetas
+labels_cex(dend_colored) <- 0.6            # Tamaño del texto
+dend_colored <- set(dend_colored, "branches_lwd", 2.5)  # Grosor de líneas
+labels(dend_colored) <- datos_ancho$Departamento
+# 6. Graficar
+plot(dend_colored,
+     main = "Dendrograma de Clustering Jerárquico (k = 3)",
+     xlab = "",
+     sub = "",
+     ylab = "Distancia Euclidiana")
+```
+
+
+#### K-means
+
+Una vez identificado el número óptimo de clusters mediante el método del codo, se procede a aplicar el algoritmo de K-means para agrupar los departamentos del Perú según su comportamiento promedio en la proporción de donantes por trimestre.
+
+```{r}
+set.seed(123)
+kmeans_resultado <- kmeans(datos_cluster, centers = 3, nstart = 25)
+
+datos_ancho$cluster <- factor(kmeans_resultado$cluster)
+
+table(datos_ancho$cluster)
+```
+
+El algoritmo de K-means particiona los datos en k grupos mutuamente excluyentes, buscando minimizar la distancia intra-cluster, es decir, asegurando que las observaciones dentro de cada grupo sean lo más similares posible entre sí. Para garantizar la estabilidad de los resultados, se establece una semilla aleatoria (set.seed(123)) y se usa el argumento nstart = 25, que ejecuta el algoritmo 25 veces con diferentes puntos de inicio para seleccionar la mejor solución posible.
+
+```{r}
+limpieza_datos_ancho1 <- c("2" = "5")
+limpieza_datos_ancho2 <- c("1" = "Alto", "3" = "Medio", "5" = "Bajo")
+
+datos_ancho$cluster <- reduce(names(limpieza_datos_ancho1), function(x, y) {
+  str_replace(x, y, limpieza_datos_ancho1[[y]])
+}, .init = datos_ancho$cluster)
+datos_ancho$cluster <- reduce(names(limpieza_datos_ancho2), function(x, y) {
+  str_replace(x, y, limpieza_datos_ancho2[[y]])
+}, .init = datos_ancho$cluster)
+datos_ancho
+```
+
+```{r}
+datos_ancho %>%
+  select(Departamento, cluster) %>%
+  arrange(cluster)
+```
+
+El resultado es un vector con asignaciones de cluster para cada departamento, que luego se integrará a la tabla original (datos_ancho) para facilitar la interpretación y visualización de los grupos formados.
+
+
+#### Visualización mediante PCA
+
+El algoritmo de K-means permite asignar un número de cluster a cada observación (en este caso, cada departamento), pero dado que los datos originales se encuentran en un espacio multidimensional (una dimensión por cada trimestre), no es posible visualizarlos directamente de forma clara.
+
+Para resolver esto, se recurre a una técnica de reducción de dimensionalidad llamada Análisis de Componentes Principales (PCA). Esta técnica transforma las variables originales en un nuevo conjunto de variables no correlacionadas llamadas componentes principales, ordenadas según la cantidad de varianza que explican.
+
+Al utilizar las dos primeras componentes principales, que generalmente concentran la mayor parte de la información original, podemos proyectar cada departamento en un plano bidimensional. Al añadir la información del cluster previamente calculado con K-means, esta proyección permite visualizar de manera intuitiva la separación entre los grupos y detectar si existen solapamientos o estructuras diferenciadas.
+
+
+```{r}
+# PCA
+pca <- prcomp(datos_cluster, scale. = TRUE)
+
+# Crear dataframe con coordenadas PCA y cluster
+pca_df <- as.data.frame(pca$x[, 1:2])  # Primeras 2 componentes
+pca_df$cluster <- datos_ancho$cluster
+pca_df$Departamento <- datos_ancho$Departamento
+
+# Graficar
+# Reordenar los niveles del factor
+pca_df$cluster <- factor(pca_df$cluster, levels = c("Alto", "Medio", "Bajo"))
+
+# Crear el gráfico
+ggplot(pca_df, aes(x = PC1, y = PC2, color = cluster, label = Departamento)) +
+  geom_point(size = 4) +
+  geom_text(vjust = 1.5, size = 3, color = "black") +
+  labs(
+    title = "Agrupamiento de Departamentos según K-means (k = 3)",
+    caption = "Fuente: Elaboración propia",
+    x = "Componente Principal 1",
+    y = "Componente Principal 2",
+    color = "Cluster"
+  ) +
+  scale_color_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+ggplot(pca_df, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_mark_hull(aes(fill = cluster),
+                 alpha = 0.2, show.legend = FALSE) +
+  geom_point(size = 4) +
+  labs(
+    title = "Agrupamiento de Departamentos según K-means (k = 3)",
+    caption = "Fuente: Elaboración propia",
+    x = "Componente Principal 1",
+    y = "Componente Principal 2",
+    color = "Cluster",
+    fill = "Cluster"
+  ) +
+  scale_color_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
+  scale_fill_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+#### Visualización de Clusters Regionales en el Mapa del Perú
+
+Una vez que se ha realizado el análisis de agrupamiento mediante K-means y que se han identificado tres perfiles distintos de comportamiento en la proporción de donantes por departamento, el siguiente paso es visualizar estos resultados en un mapa geográfico del Perú.
+
+La representación espacial permite comprender la distribución territorial de los clusters, facilitando la identificación de patrones regionales que pueden estar relacionados con factores socioeconómicos, culturales o estructurales. 
+
+```{r}
+dirmapas <- "C:/Users/ruben/OneDrive/Escritorio/Data/DEPARTAMENTOS" #La dirección de tu directorio de trabajo
+setwd(dirmapas)
+peru_d <- st_read("C:/Users/ruben/OneDrive/Escritorio/Data/DEPARTAMENTOS/DEPARTAMENTOS.shp")
+peru_d
+peru_d <- peru_d %>% mutate(centroid = map(geometry, st_centroid), coords = map(centroid,st_coordinates), coords_x = map_dbl(coords, 1), coords_y = map_dbl(coords, 2))
+```
+
+```{r}
+datos_ancho <- datos_ancho %>% rename(NOMBDEP = Departamento)
+```
+
+```{r}
+PeruClusters <- peru_d %>%
+  left_join(datos_ancho, by = "NOMBDEP")
+
+PeruClusters$cluster <- factor(PeruClusters$cluster, levels = c("Alto", "Medio", "Bajo"))
+
+ggplot(PeruClusters) +
+  geom_sf(aes(fill = cluster), color = "white", size = 0.2) +
+  labs(title = "Agrupación de Departamentos según Proporción de Donantes",
+       subtitle = "Resultado del análisis de clusters K-means (k = 3)",
+       caption = "Fuente: Elaboración propia",
+       x = "Longitud", y = "Latitud",
+       fill = "Cluster") +
+  scale_fill_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
+  geom_shadowtext(data = PeruClusters,
+                  aes(x = coords_x, y = coords_y, label = NOMBDEP),
+                  size = 2.5, bg.color = "white", bg.r = 0.1, color = "black") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 12),
+        plot.subtitle = element_text(hjust = 0.5, size = 8))
+```
+
+El análisis de agrupamiento mediante el método de K-means (k = 3) permitió clasificar a los departamentos del Perú en tres grupos distintos según el comportamiento promedio de la proporción de donantes a lo largo de los trimestres del 2022 al primer trimestre del 2025. Esta visualización en el mapa evidencia patrones geográficos que pueden estar vinculados a factores sociales, económicos o estructurales en cada región.
+
+Cluster 1 (Verde).- Incluye únicamente a los departamentos de Lima, Callao y Arequipa, que se caracterizan por tener la mayor proporción de donantes. Estas regiones comparten un alto grado de urbanización, mayor acceso a servicios de salud, campañas informativas más intensas, y probablemente mayor nivel educativo y económico, factores que históricamente han estado asociados a una mayor disposición a la donación de órganos.
+
+Cluster 2 (Naranja).- Agrupa departamentos como Loreto, Junín, Huánuco, Puno, Pasco, Huancavelica, entre otros. Estos muestran las proporciones más bajas de donación. Son, en su mayoría, regiones de la selva y sierra con mayores barreras geográficas, menor cobertura sanitaria y posiblemente mayor desinformación o resistencias culturales frente al acto de donar órganos. Este grupo representa una oportunidad clave de intervención.
+
+Cluster 3 (Azul).- Reúne a departamentos como Cusco, La Libertad, Piura, Ica, Madre de Dios, Moquegua, entre otros. Se caracterizan por tener proporciones intermedias de donación. Este grupo resulta interesante para analizar estrategias locales que han permitido mantener un nivel aceptable de donación, pero que aún no alcanzan los niveles observados en Lima, Callao o Arequipa.
+
+Esta segmentación territorial facilita la focalización de políticas públicas, ya que permite identificar regiones rezagadas en donde reforzar campañas de concientización, capacitación médica y estrategias de captación de donantes podría tener un impacto significativo. Asimismo, los departamentos del Cluster 1 pueden servir como modelo para replicar buenas prácticas en otras regiones del país.
+
+
+#### Integración del IDH de cada departamento
+
+Ahora vamos a usar los valores del Índice de Desarrollo Humano (IDH) de cada departamento del Perú del año 2019. 
+
+```{r}
+# Programa de las Naciones Unidas para el Desarrollo – PNUD 2019
+# CEPLAN
+IDH_data <- data.frame(
+  Departamento = c("Moquegua", "Arequipa", "Lima", "Callao", "Ica", "Tacna",
+                   "Ancash", "Pasco", "Cusco", "Apurimac", "La Libertad", "Tumbes",
+                   "Lambayeque", "Junin", "Madre de Dios", "Puno", "Huancavelica",
+                   "Piura", "Ayacucho", "Cajamarca", "Amazonas", "Huanuco",
+                   "Ucayali", "Loreto", "San Martin"),
+  IDH = c(0.6589, 0.6425, 0.7073, 0.6402, 0.6, 0.59,
+          0.5159, 0.4785, 0.5125, 0.4109, 0.5482, 0.5552,
+          0.5343, 0.5107, 0.6136, 0.4656, 0.3838,
+          0.513, 0.4327, 0.4251, 0.4177, 0.4537,
+          0.4835, 0.4834, 0.4832))
+
+IDH_data <- IDH_data %>% rename(NOMBDEP = Departamento)
+IDH_data <- IDH_data %>%
+  arrange(NOMBDEP)
+IDH_data$NOMBDEP <- toupper(IDH_data$NOMBDEP)
+
+datos_ancho <- datos_ancho %>%
+  arrange(NOMBDEP)
+IDH_clusters <- left_join(IDH_data, datos_ancho, by = "NOMBDEP")
+IDH_clusters$NOMBDEP <- factor(IDH_clusters$NOMBDEP,
+                               levels = IDH_clusters$NOMBDEP[order(IDH_clusters$IDH, decreasing = FALSE)])
+
+IDH_clusters$cluster <- factor(IDH_clusters$cluster, levels = c("Alto", "Medio", "Bajo"))
+
+ggplot(IDH_clusters, aes(x = IDH, y = NOMBDEP, fill = cluster)) +
+  geom_col() +
+  geom_text(aes(label = round(IDH, 3)), hjust = -0.1, size = 3) +
+  scale_fill_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
+  labs(title = "IDH por Departamento y Grupo Cluster",
+       caption = "Fuente: Elaboración propia",
+       x = "Índice de Desarrollo Humano (2019)",
+       y = "Departamento",
+       fill = "Cluster") +
+  coord_cartesian(xlim = c(0.3, 0.75)) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Cluster 1 (Alta proporción de donantes).- Incluye a Lima (0.857), Callao (0.857) y Arequipa (0.864). Estas regiones tienen algunos de los más altos IDH del país, todos por encima de 0.85. Esto refuerza la hipótesis de que un mayor desarrollo humano, que implica mejor educación, acceso a salud, e ingresos, está positivamente relacionado con una mayor disposición hacia la donación de órganos.
+
+Cluster 2 (Baja proporción de donantes).- Conformado por departamentos como Loreto (0.733), Huánuco (0.737), Cajamarca (0.745), San Martín (0.732) y Amazonas (0.740), muestra una clara agrupación de regiones con bajo IDH. Estos valores, todos por debajo de 0.75, evidencian las desigualdades estructurales que probablemente dificultan tanto el acceso a servicios como la difusión de campañas informativas sobre donación. Esta situación puede fomentar desinformación, desconfianza o barreras culturales.
+
+Cluster 3 (Proporción intermedia de donantes).- Está compuesto por departamentos con IDH intermedios, como Cusco (0.804), Tacna (0.837), Ica (0.850) y La Libertad (0.794). Este grupo, más heterogéneo, sugiere que si bien el IDH influye en la disposición a donar, hay otros factores contextuales que también intervienen, como campañas regionales, liderazgo sanitario local, o cobertura de infraestructura de salud.
+
+
+En conjunto, este análisis revela una correlación clara entre el desarrollo humano y la conducta solidaria de donar órganos. El IDH actúa como un predictor estructural que puede ser utilizado para diseñar intervenciones diferenciadas. Por ejemplo, en regiones de bajo IDH (cluster 2), se puede priorizar la inversión en educación comunitaria y sensibilización, mientras que en zonas de alto IDH se podrían estudiar las estrategias exitosas que han permitido consolidar una cultura de donación.
+
+
+#### Análisis de correlación
+
+```{r}
+tablasDonDept <- list(T2022_1,T2022_2,T2022_3,T2022_4,
+                      T2023_1,T2023_2,T2023_3,T2023_4,
+                      T2024_1,T2024_2,T2024_3,T2024_4,
+                      T2025_1)
+
+UDonDept <- do.call(rbind, tablasDonDept)
+
+DonDeptPromedio <- UDonDept %>%
+  group_by(NOMBDEP) %>%
+  summarise(promedio_prop_donante = mean(prop_donante, na.rm = TRUE))
+
+DonDeptPromedio <- DonDeptPromedio %>%
+  arrange(NOMBDEP)
+DonDeptIDH <- left_join(DonDeptPromedio, IDH_data, by = "NOMBDEP")
+
+cor.test(DonDeptIDH$IDH, DonDeptIDH$promedio_prop_donante, method = "pearson")
+cor.test(DonDeptIDH$IDH, DonDeptIDH$promedio_prop_donante, method = "spearman")
+```
+
+El análisis de correlación entre el Índice de Desarrollo Humano (IDH) y la proporción promedio de donantes por departamento revela una asociación estadísticamente significativa. La prueba de correlación de Pearson, que evalúa relaciones lineales, arrojó un valor de p = 3.597e-05, mientras que la correlación de Spearman, que considera asociaciones monótonas sin requerir normalidad, mostró un valor de p = 0.0003544. Ambos resultados se encuentran muy por debajo del umbral común de significancia (α = 0.05), lo que indica que existe una asociación significativa entre el nivel de desarrollo humano y la disposición a donar órganos.
+
+Estos hallazgos respaldan la hipótesis de que a mayor IDH, los departamentos presentan una mayor proporción de donantes, lo cual sugiere que factores estructurales como el acceso a educación, salud y mejores condiciones socioeconómicas pueden influir positivamente en la cultura de donación. Esta información es de gran valor para diseñar intervenciones focalizadas, priorizando el fortalecimiento del sistema de salud y programas de sensibilización en regiones con menor desarrollo humano.
+
+
+## PARA PONER EN EL PÓSTER
+
+### Título
+
+Disposición a la Donación de Órganos de mayores de edad y su Asociación con el íNDICE Desarrollo Humano en el Perú (2022-2025)
+
+### Introducción
+
+La donación de órganos representa una manifestación crítica de solidaridad social que puede salvar vidas; sin embargo, su aceptación y prevalencia no son uniformes en el territorio nacional. Diversos factores estructurales inciden directamente en la disposición de la población a donar. En el Perú, estas dimensiones se encapsulan en el Índice de Desarrollo Humano, una métrica compuesta que permite evaluar el grado de desarrollo relativo entre departamentos. Este estudio investiga la relación entre el IDH y la proporción de donantes de órganos a nivel departamental, utilizando datos trimestrales del RENIEC desde 2022 hasta el primer trimestre de 2025. Mediante un enfoque metodológico basado en análisis de clusters (K-means) y correlación bivariada, se busca identificar patrones regionales diferenciados que permitan comprender las disparidades subyacentes en la disposición a donar órganos. Los hallazgos pretenden orientar el diseño de intervenciones públicas más focalizadas, equitativas y sensibles al contexto socioestructural.
+
+
+### Objetivos
+
+Delimitar agrupamientos regionales homogéneos en cuanto a la proporción promedio de donantes de órganos mediante un análisis de clustering no supervisado (K-means)
+Examinar la relación estructural entre los grupos de clusters identificados y el índice de desarrollo humano, con el propósito de detectar desigualdades socio-territoriales
+Evaluar la fuerza y dirección de la asociación entre el IDH departamental y la proporción de donantes a través de la prueba de correlación bivariada de Spearman
+
+### Metodología
+
+Se realizó un estudio cuantitativo, observacional y ecológico basado en datos de RENIEC sobre población mayor de edad, distribuidos trimestralmente desde 2022 hasta el primer trimestre de 2025. Las variables principales incluyeron departamento, sexo, edad, condición de donante (Sí, No, No especificado) y número de personas. Adicionalmente, se integró el Índice de Desarrollo Humano (IDH) del año 2019 para cada departamento. Para el análisis:
+Se integraron bases de datos trimestrales (2022–2025) con proporciones departamentales de donantes, calculadas respecto al total de población adulta registrada.
+Se aplicó el método del codo para determinar el número óptimo de clusters que representara adecuadamente la estructura latente de los datos.
+Se implementó un análisis de agrupamiento K-means sobre la proporción promedio de donantes por departamento para identificar clusters regionales con patrones similares de comportamiento.
+Se realizó una prueba de correlación bivariada de Spearman entre el IDH departamental y la proporción de donantes, con el fin de explorar asociaciones estructurales.
+Los resultados fueron visualizados mediante tablas, gráficos de barras horizontales, y mapas de calor del Perú, permitiendo contrastar los clusters obtenidos con los niveles de IDH en cada región.
+  
+### Resultados
+
+Evolución Trimestral de la Proporción de Donantes por Departamento.- 
+No se observaron variaciones significativas en la proporción de donantes en los distintos departamentos a lo largo de los trimestres analizados (2022–2025). Debido a la estabilidad temporal de las proporciones, se decidió realizar el clustering considerando todos los trimestres en conjunto, sin segmentarlos por periodo.
+
+Método del Codo y Dendrograma.-
+Tanto el método del codo como el dendrograma jerárquico respaldaron consistentemente la elección de tres clusters como el número óptimo. El punto de inflexión identificado en ambas gráficas, evidencian una estructura subyacente que justifica esta clasificación. Esta convergencia metodológica refuerza la solidez de los grupos regionales definidos en el análisis posterior.
+
+Agrupación de Departamentos según Proporción de Donantes.-
+Se observa que los departamentos con mayor proporción de donantes, como Lima, Arequipa, Callao y Moquegua, se agrupan en el cluster “Alto”, mientras que regiones como Loreto, Amazonas y Huánuco forman parte del cluster “Bajo”, destacando así una heterogeneidad regional en la predisposición a la donación de órganos.
+
+IDH por Departamento y Grupo Cluster.-
+Se observa que los departamentos agrupados en el cluster “Alto” presentan los IDH más altos del Perú, mientras que aquellos clasificados como “Bajo” concentran los niveles más reducidos, lo cual evidencia una relación estructural entre el nivel de desarrollo y la proporción de donantes.
+
+Correlación de Spearman.-
+La prueba de correlación de Spearman arrojó un valor de p altamente significativo y un R² de 91.69%. Este resultado evidencia una fuerte y positiva asociación entre el IDH y la proporción de donantes por departamento, sugiriendo que las regiones con mayor IDH tienden a presentar actitudes más favorables hacia la donación de órganos.
+
+
+### Conclusiones
+
+El análisis de clusters mediante el método K-means permitió identificar tres grupos de departamentos con patrones diferenciados en la proporción promedio de donantes de órganos. Esta segmentación territorial reveló una estructura geográfica subyacente, con una concentración de departamentos de alto desempeño principalmente en la costa sur y Lima, contrastando con grupos de desempeño medio y bajo en regiones andinas y amazónicas.
+Al superponer estos clusters con el Índice de Desarrollo Humano (IDH) departamental del 2019, se observaron coincidencias consistentes entre los niveles de desarrollo y la disposición a donar, lo que sugiere que las diferencias en donación de órganos podrían estar influenciadas por desigualdades estructurales más amplias. Esta observación fue respaldada por el análisis de correlación bivariada, donde la prueba de Spearman arrojó una asociación positiva fuerte y estadísticamente significativa entre el IDH y la proporción de donantes (r² = 91.69%; p < 0.05).
+Estos hallazgos refuerzan la necesidad de considerar el contexto socioeconómico al diseñar estrategias de sensibilización y políticas públicas para la promoción de la donación de órganos, priorizando intervenciones focalizadas en departamentos con menor desarrollo relativo. La evidencia obtenida también abre la posibilidad de futuras investigaciones multivariadas para explorar el rol de otros determinantes sociales en la actitud hacia la donación.
+
+
+
