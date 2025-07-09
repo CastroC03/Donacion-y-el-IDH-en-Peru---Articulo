@@ -13,6 +13,7 @@ output:
 Nota: CORRER DOS VECES
 
 ```{r}
+#install.packages("qqlotr")
 #install.packages("readxl")
 #install.packages("tidyr")
 #install.packages("dplyr")
@@ -26,6 +27,11 @@ Nota: CORRER DOS VECES
 #install.packages("dendextend")
 #install.packages("ggdendro")
 #install.packages("ggforce")
+#install.packages("cluster")
+#install.packages("factoextra")
+#install.packages("nortest")
+
+library(qqplotr)
 library(readxl)
 library(tidyr)
 library(dplyr)
@@ -39,6 +45,9 @@ library(shadowtext)
 library(dendextend)
 library(ggdendro)
 library(ggforce)
+library(cluster)
+library(factoextra)
+library(nortest)
 ```
 
 ## Bases de datos
@@ -350,6 +359,7 @@ ggplot(datos_largos, aes(x = Trimestre, y = prop_donante, group = Departamento, 
   geom_line(size = 0.5) +
   geom_point(size = 1) +
   labs(title = "Evolución Trimestral de la Proporción de Donantes por Departamento",
+       caption="Fuente: Elaboración propia",
        x = "Trimestre",
        y = "Proporción de Donantes",
        color = "Departamento") +
@@ -398,14 +408,14 @@ wss_df <- data.frame(
 
 # Graficar el método del codo
 ggplot(wss_df, aes(x = k, y = wss)) +
-  geom_line(color = "#e9ddc1", size = 2.5) +
-  geom_point(color = "#807668", size = 3) +
-  labs(title = "Método del Codo para Determinar el Número Óptimo de Clusters",
+  geom_line(color = "#a7c6ed", size = 2.5) +
+  geom_point(color = "red", size = 3) +
+  labs(title = "Método del Codo",
        caption = "Fuente: Elaboración propia",
        x = "Número de Clusters (k)",
        y = "Suma de cuadrados intra-cluster (WSS)") +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(size = 18,hjust = 0.5))
 ```
 
 En el gráfico obtenido, se puede apreciar que al aumentar k desde 1 hasta 10, la WSS disminuye progresivamente; sin embargo, esta reducción no es constante. Existe un punto claro en el que la disminución de la WSS se vuelve menos pronunciada: este punto de inflexión o "codo" ocurre cuando k = 3. A partir de este valor, añadir más clusters no reduce significativamente la variabilidad interna, lo que sugiere que los datos ya están adecuadamente representados con tres grupos.
@@ -422,22 +432,66 @@ dist_matrix <- dist(datos_cluster, method = "euclidean")
 # 3. Aplicar clustering jerárquico
 hc <- hclust(dist_matrix, method = "complete")
 
-# 4. Convertir a objeto dendrograma y asignar colores
+# 4. Convertir a objeto dendrograma y asignar colores (5 clusters con paleta Obake Ito)
 dend <- as.dendrogram(hc)
-dend_colored <- color_branches(dend, k = 3)  # colorea con k = 3
+dend_colored <- color_branches(dend, k = 5, 
+                                col = c("#f0b8aa", "#b4e0d1", "#f2d0a7", "#d8b4e2", "#a7c6ed"))
 
 # 5. Personalizar etiquetas y grosor de líneas
-labels_colors(dend_colored) <- "black"     # Color de etiquetas
-labels_cex(dend_colored) <- 0.6            # Tamaño del texto
+labels_colors(dend_colored) <- "black"               # Color de etiquetas
+labels_cex(dend_colored) <- 0.7                      # Tamaño del texto
 dend_colored <- set(dend_colored, "branches_lwd", 2.5)  # Grosor de líneas
-labels(dend_colored) <- datos_ancho$Departamento
+labels(dend_colored) <- datos_ancho$Departamento     # Etiquetas con nombres
+
 # 6. Graficar
 plot(dend_colored,
-     main = "Dendrograma de Clustering Jerárquico (k = 3)",
+     main = "Dendrograma de Clustering Jerárquico (k = 5)",
      xlab = "",
      sub = "",
-     ylab = "Distancia Euclidiana")
+     ylab = "Distancia Euclidiana",
+     cex.main = 1.2)
+
+mtext("Fuente: Elaboración propia", side = 1, line = 4, adj = 1, cex = 0.8)
 ```
+
+```{r}
+# 1. Selección de variables numéricas
+datos_cluster <- datos_ancho %>% select(-Departamento)
+
+# 2. Cálculo de silueta para varios k
+sil_plot <- fviz_nbclust(
+  datos_cluster,
+  FUNcluster = kmeans,
+  method = "silhouette",
+  k.max = 7,
+  nstart = 25,
+  diss = dist(datos_cluster, method = "euclidean")
+)
+
+# 3. Extraer datos del gráfico
+sil_data <- sil_plot$data
+
+# 4. Volver a graficar con ggplot para personalización completa
+ggplot(sil_data, aes(x = clusters, y = y, group = 1)) +
+  geom_line(color = "#a7c6ed", size = 1.5) +          # Línea de unión
+  geom_point(color = "red", size = 3) +             # Puntos grandes y rojos
+  geom_vline(xintercept = sil_data$clusters[which.max(sil_data$y)],
+             linetype = "dashed", color = "#a7c6ed", size = 1) +  # Línea punteada negra y gruesa
+  labs(
+    title = "Método de Silueta",
+    caption = "Fuente: Elaboración propia",
+    x = "Número de Clusters (k)",
+    y = "Ancho promedio de silueta"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+
+```
+
 
 
 #### K-means
@@ -446,7 +500,7 @@ Una vez identificado el número óptimo de clusters mediante el método del codo
 
 ```{r}
 set.seed(123)
-kmeans_resultado <- kmeans(datos_cluster, centers = 3, nstart = 25)
+kmeans_resultado <- kmeans(datos_cluster, centers = 5, nstart = 25)
 
 datos_ancho$cluster <- factor(kmeans_resultado$cluster)
 
@@ -456,8 +510,8 @@ table(datos_ancho$cluster)
 El algoritmo de K-means particiona los datos en k grupos mutuamente excluyentes, buscando minimizar la distancia intra-cluster, es decir, asegurando que las observaciones dentro de cada grupo sean lo más similares posible entre sí. Para garantizar la estabilidad de los resultados, se establece una semilla aleatoria (set.seed(123)) y se usa el argumento nstart = 25, que ejecuta el algoritmo 25 veces con diferentes puntos de inicio para seleccionar la mejor solución posible.
 
 ```{r}
-limpieza_datos_ancho1 <- c("2" = "5")
-limpieza_datos_ancho2 <- c("1" = "Alto", "3" = "Medio", "5" = "Bajo")
+limpieza_datos_ancho1 <- c("2" = "6","4" = "7","5" = "8","3" = "9","1" = "10")
+limpieza_datos_ancho2 <- c("6" = "Muy Alto", "7" = "Alto", "8" = "Medio", "9" = "Bajo", "10" = "Muy Bajo")
 
 datos_ancho$cluster <- reduce(names(limpieza_datos_ancho1), function(x, y) {
   str_replace(x, y, limpieza_datos_ancho1[[y]])
@@ -497,23 +551,28 @@ pca_df$Departamento <- datos_ancho$Departamento
 
 # Graficar
 # Reordenar los niveles del factor
-pca_df$cluster <- factor(pca_df$cluster, levels = c("Alto", "Medio", "Bajo"))
+pca_df$cluster <- factor(pca_df$cluster, levels = c("Muy Alto", "Alto", "Medio", "Bajo", "Muy Bajo"))
 
 # Crear el gráfico
 ggplot(pca_df, aes(x = PC1, y = PC2, color = cluster, label = Departamento)) +
   geom_point(size = 4) +
   geom_text(vjust = 1.5, size = 3, color = "black") +
   labs(
-    title = "Agrupamiento de Departamentos según K-means (k = 3)",
+    title = "Gráfico PCA con 5 clusters",
     caption = "Fuente: Elaboración propia",
     x = "Componente Principal 1",
     y = "Componente Principal 2",
     color = "Cluster"
   ) +
-  scale_color_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
+  scale_color_manual(values = c("Muy Alto"="#f0b8aa",
+                                "Alto"="#d8b4e2",
+                                "Medio"="#f2d0a7",
+                                "Bajo"="#b4e0d1",
+                                "Muy Bajo"="#a7c6ed")) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+
 
 ```{r}
 ggplot(pca_df, aes(x = PC1, y = PC2, color = cluster)) +
@@ -521,17 +580,25 @@ ggplot(pca_df, aes(x = PC1, y = PC2, color = cluster)) +
                  alpha = 0.2, show.legend = FALSE) +
   geom_point(size = 4) +
   labs(
-    title = "Agrupamiento de Departamentos según K-means (k = 3)",
+    title = "Gráfico PCA con 5 clusters",
     caption = "Fuente: Elaboración propia",
     x = "Componente Principal 1",
     y = "Componente Principal 2",
     color = "Cluster",
     fill = "Cluster"
   ) +
-  scale_color_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
-  scale_fill_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
+  scale_color_manual(values = c("Muy Alto"="#a7c6ed",
+                                "Alto"="#d8b4e2",
+                                "Medio"="#f2d0a7",
+                                "Bajo"="#b4e0d1",
+                                "Muy Bajo"="#f0b8aa")) +
+  scale_fill_manual(values = c("Muy Alto"="#a7c6ed",
+                               "Alto"="#d8b4e2",
+                               "Medio"="#f2d0a7",
+                               "Bajo"="#b4e0d1",
+                               "Muy Bajo"="#f0b8aa")) +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
 ```
 
 
@@ -558,22 +625,31 @@ datos_ancho <- datos_ancho %>% rename(NOMBDEP = Departamento)
 PeruClusters <- peru_d %>%
   left_join(datos_ancho, by = "NOMBDEP")
 
-PeruClusters$cluster <- factor(PeruClusters$cluster, levels = c("Alto", "Medio", "Bajo"))
+PeruClusters$cluster <- factor(PeruClusters$cluster, 
+                               levels = c("Muy Alto", "Alto", "Medio", "Bajo", "Muy Bajo"))
 
 ggplot(PeruClusters) +
   geom_sf(aes(fill = cluster), color = "white", size = 0.2) +
-  labs(title = "Agrupación de Departamentos según Proporción de Donantes",
-       subtitle = "Resultado del análisis de clusters K-means (k = 3)",
-       caption = "Fuente: Elaboración propia",
-       x = "Longitud", y = "Latitud",
-       fill = "Cluster") +
-  scale_fill_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
+  labs(
+    title = "Agrupación de Departamentos por grupo Cluster",
+    subtitle = "Resultado del análisis de clusters K-means (k = 5)",
+    caption = "Fuente: Elaboración propia",
+    x = "Longitud", y = "Latitud",
+    fill = "Cluster"
+  ) +
+  scale_fill_manual(values = c("Muy Alto" = "#f0b8aa",
+                               "Alto"     = "#d8b4e2",
+                               "Medio"    = "#f2d0a7",
+                               "Bajo"     = "#b4e0d1",
+                               "Muy Bajo" = "#a7c6ed")) +
   geom_shadowtext(data = PeruClusters,
                   aes(x = coords_x, y = coords_y, label = NOMBDEP),
                   size = 2.5, bg.color = "white", bg.r = 0.1, color = "black") +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5, size = 12),
-        plot.subtitle = element_text(hjust = 0.5, size = 8))
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 8)
+  )
 ```
 
 El análisis de agrupamiento mediante el método de K-means (k = 3) permitió clasificar a los departamentos del Perú en tres grupos distintos según el comportamiento promedio de la proporción de donantes a lo largo de los trimestres del 2022 al primer trimestre del 2025. Esta visualización en el mapa evidencia patrones geográficos que pueden estar vinculados a factores sociales, económicos o estructurales en cada región.
@@ -606,31 +682,46 @@ IDH_data <- data.frame(
           0.513, 0.4327, 0.4251, 0.4177, 0.4537,
           0.4835, 0.4834, 0.4832))
 
-IDH_data <- IDH_data %>% rename(NOMBDEP = Departamento)
-IDH_data <- IDH_data %>%
+IDH_data <- IDH_data %>% 
+  rename(NOMBDEP = Departamento) %>% 
   arrange(NOMBDEP)
 IDH_data$NOMBDEP <- toupper(IDH_data$NOMBDEP)
 
-datos_ancho <- datos_ancho %>%
+datos_ancho <- datos_ancho %>% 
   arrange(NOMBDEP)
+
+# Unir con clusters
 IDH_clusters <- left_join(IDH_data, datos_ancho, by = "NOMBDEP")
 IDH_clusters$NOMBDEP <- factor(IDH_clusters$NOMBDEP,
                                levels = IDH_clusters$NOMBDEP[order(IDH_clusters$IDH, decreasing = FALSE)])
 
-IDH_clusters$cluster <- factor(IDH_clusters$cluster, levels = c("Alto", "Medio", "Bajo"))
+# Asignar niveles de cluster para 5 grupos
+IDH_clusters$cluster <- factor(IDH_clusters$cluster,
+                               levels = c("Muy Bajo", "Bajo", "Medio", "Alto", "Muy Alto"))
 
+# Graficar
 ggplot(IDH_clusters, aes(x = IDH, y = NOMBDEP, fill = cluster)) +
   geom_col() +
   geom_text(aes(label = round(IDH, 3)), hjust = -0.1, size = 3) +
-  scale_fill_manual(values = c("Alto" = "#807668", "Medio" = "#c5baa3", "Bajo" = "#e9ddc1")) +
-  labs(title = "IDH por Departamento y Grupo Cluster",
-       caption = "Fuente: Elaboración propia",
-       x = "Índice de Desarrollo Humano (2019)",
-       y = "Departamento",
-       fill = "Cluster") +
+  scale_fill_manual(values = c(
+    "Muy Alto" = "#f0b8aa",
+    "Alto"     = "#d8b4e2",
+    "Medio"    = "#f2d0a7",
+    "Bajo"     = "#b4e0d1",
+    "Muy Bajo" = "#a7c6ed"
+  )) +
+  labs(
+    title = "IDH por Departamento y Grupo Cluster",
+    caption = "Fuente: Elaboración propia",
+    x = "Índice de Desarrollo Humano (2019)",
+    y = "Departamento",
+    fill = "Cluster"
+  ) +
   coord_cartesian(xlim = c(0.3, 0.75)) +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+  )
 ```
 
 Cluster 1 (Alta proporción de donantes).- Incluye a Lima (0.857), Callao (0.857) y Arequipa (0.864). Estas regiones tienen algunos de los más altos IDH del país, todos por encima de 0.85. Esto refuerza la hipótesis de que un mayor desarrollo humano, que implica mejor educación, acceso a salud, e ingresos, está positivamente relacionado con una mayor disposición hacia la donación de órganos.
@@ -643,7 +734,68 @@ Cluster 3 (Proporción intermedia de donantes).- Está compuesto por departament
 En conjunto, este análisis revela una correlación clara entre el desarrollo humano y la conducta solidaria de donar órganos. El IDH actúa como un predictor estructural que puede ser utilizado para diseñar intervenciones diferenciadas. Por ejemplo, en regiones de bajo IDH (cluster 2), se puede priorizar la inversión en educación comunitaria y sensibilización, mientras que en zonas de alto IDH se podrían estudiar las estrategias exitosas que han permitido consolidar una cultura de donación.
 
 
+#### Pruebas de Normalidad
+
+```{r}
+promedio_proporcion <- datos_ancho %>%
+  rowwise() %>%
+  mutate(promedio = mean(c_across(starts_with("T")), na.rm = TRUE)) %>%
+  ungroup() %>%
+  select(NOMBDEP, promedio)
+```
+
+```{r}
+cv_promprop <- sd(promedio_proporcion$promedio) / mean(promedio_proporcion$promedio) * 100
+cv_promprop
+```
+
+
+```{r}
+sf.test(promedio_proporcion$promedio) 
+shapiro.test(promedio_proporcion$promedio)
+lillie.test(promedio_proporcion$promedio)
+```
+
+Como en las tres pruebas de normalidad tenemos un valor de p mayor a 0.05, no rechazamos la hipótesis nula y concluimos que la variable tiene una distribución promedio tiene un distribución normal
+
+```{r}
+ggplot(datos_ancho, aes(x = factor(cluster), y = promedio_proporcion$promedio)) +
+  geom_boxplot() +
+  labs(x = "Cluster", y = "Proporción promedio de donantes")
+```
+
+```{r}
+datos_ancho %>%
+  group_by(cluster) %>%
+  summarise(p_value = shapiro.test(promedio_proporcion$promedio)$p.value)
+```
+
+Dado que el valor p es mayor que 0.05, no se rechaza la hipótesis nula de normalidad.
+Esto sugiere que la distribución de la proporción promedio de donantes dentro de los 5 clusters no difiere significativamente de una distribución normal. Asumimos normalidad
+
+Evaluación de normalidad para IDH por Departamento
+
+```{r}
+sf.test(IDH_data$IDH) 
+shapiro.test(IDH_data$IDH)
+lillie.test(IDH_data$IDH)
+```
+Dado que el valor p es mayor que 0.05 en todas las pruebas, no se rechaza la hipótesis nula de normalidad. Esto sugiere que la variable IDH por departamento tiene un distribución normal.
+
+
+Evaluación de normalidad para la proporción promedio de donantes por Departamento
+
+```{r}
+sf.test(promedio_proporcion$promedio) 
+shapiro.test(promedio_proporcion$promedio)
+lillie.test(promedio_proporcion$promedio)
+```
+Dado que el valor p es mayor que 0.05 en todas las pruebas, no se rechaza la hipótesis nula de normalidad. Esto sugiere que la variable proporción promedio de donantes por departamento tiene un distribución normal.
+
+
 #### Análisis de correlación
+
+Como se concluyó una distribución NORMAL. Debemos aplicar la prueba de correlación de Pearson
 
 ```{r}
 tablasDonDept <- list(T2022_1,T2022_2,T2022_3,T2022_4,
@@ -662,10 +814,9 @@ DonDeptPromedio <- DonDeptPromedio %>%
 DonDeptIDH <- left_join(DonDeptPromedio, IDH_data, by = "NOMBDEP")
 
 cor.test(DonDeptIDH$IDH, DonDeptIDH$promedio_prop_donante, method = "pearson")
-cor.test(DonDeptIDH$IDH, DonDeptIDH$promedio_prop_donante, method = "spearman")
 ```
 
-El análisis de correlación entre el Índice de Desarrollo Humano (IDH) y la proporción promedio de donantes por departamento revela una asociación estadísticamente significativa. La prueba de correlación de Pearson, que evalúa relaciones lineales, arrojó un valor de p = 3.597e-05, mientras que la correlación de Spearman, que considera asociaciones monótonas sin requerir normalidad, mostró un valor de p = 0.0003544. Ambos resultados se encuentran muy por debajo del umbral común de significancia (α = 0.05), lo que indica que existe una asociación significativa entre el nivel de desarrollo humano y la disposición a donar órganos.
+El análisis de correlación entre el Índice de Desarrollo Humano (IDH) y la proporción promedio de donantes por departamento revela una asociación estadísticamente significativa. La prueba de correlación de Pearson, que evalúa relaciones lineales, arrojó un valor de p = 7.258e-10. Este resultado se encuentra muy por debajo del umbral común de significancia (α = 0.05), lo que indica que existe una asociación significativa entre el nivel de desarrollo humano y la disposición a donar órganos. 
 
 Estos hallazgos respaldan la hipótesis de que a mayor IDH, los departamentos presentan una mayor proporción de donantes, lo cual sugiere que factores estructurales como el acceso a educación, salud y mejores condiciones socioeconómicas pueden influir positivamente en la cultura de donación. Esta información es de gran valor para diseñar intervenciones focalizadas, priorizando el fortalecimiento del sistema de salud y programas de sensibilización en regiones con menor desarrollo humano.
 
